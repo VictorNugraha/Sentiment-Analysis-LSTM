@@ -1,0 +1,817 @@
+---
+title: "Bagaimana Melakukan analisis Sentiment Pada Berita Harga Emas Dengan Model LSTM"
+author: "Victor Nugraha"
+date: "9/29/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+        collapsed: true
+    number_sections: true
+    df_print: paged
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Pendahuluan
+
+<b>Apakah Itu Analisis Sentimen? Adakah Kegunaannya?</b>
+
+<b>Analisis Sentimen</b> atau banyak orang yang menyebutnya <i>Sentiment Analysis</i> adalah sebuah analisis yang biasanya digunakan untuk mendapatkan sebuah informasi sentiment dari kalimat yang terdapat dari teks tersebut. Di dalam dunia Data Science, teknik atau metode yang dapat digunakan dalam analisis sentimen biasanya disebut dengan istilah <b><i>Natural Language Processing (NLP)</b></i>. Hasil dari analisia sentimen dengan menggunakan NLP tersebut dapat dikelompokkan menjadi tiga kelompok tergantung pemanfaatannya, seperti: 
+
+* <i>Fine-grained</i>: Tipe analisis ini memungkinkan seseorang untuk memberikan penilaian terhadap sebuah text dan penilaian tersebut memiliki <i>range</i>. analisis ini banyak digunakan untuk melakukan penilaian atau ulasan terhadap pelayanan sebuah restoran atau pelayanan dari sebuah toko <i>e-commerce</i>. 
+
+* <i>Emotion detection</i>: Sesuai dengan namanya, analisis ini dimanfaatkan untuk mengetahui emosi dari seseorang misalkan seseorang tersebut sedang bahagia, sedih, marah atau frustasi. Akan tetapi tipe analisis ini sangatlah subjektif dikarenakan penggunaan kata pada setiap orang untuk meluapkan emosinya berbeda-beda, sebagai contoh: <i>"Parah! Makanan ini enak banget"</i>, kata <i>parah</i> dalam kalimat itu bisa digambarkan sebagai kata yang positif walaupun biasanya kata parah lebih cenderung memiliki makna negatif. 
+
+* <i>Aspect-based sentiment analysis</i>: Teknik analis ini dapat digunakan untuk mengetahui apakah sebuah komentar atau kalimat mengandung aspek positif, negatif dan netral. Tipe analisis ini banyak digunakan untuk mengetahui apakah sebuah berita mengenai saham tertentu mengandung unsur negatif atau positif, karena sebuah berita yang mengandung unsur positif dapat mempengaruhi sebuah harga saham menjadi lebih tinggi begitu juga sebaliknya.
+
+![\*Sentiment Analysis](sentiment_analysis.png)
+
+Dari ketiga pemanfaatan yang sudah dijelaskan di atas, fokus pemanfaatan dari analsia sentimen yang akan dibedah lebih mendalam pada Rpubs ini adalah <i>aspect-based sentiment analysis</i>. Tipe analisis ini akan kita coba gunakan untuk mengetahui apakah berita-berita yang berhubungan dengan emas memiliki aspek positif atau negatif yang akan memberikan dampak kepada pergerakan harga emas tersebut.
+
+Sebelum membahas bagaimana mengimplementasikannya, mari coba pahami dulu mengenai investasi emas dan mengapa diperlukan untuk melakukan analisia sentimen. Emas tidak hanya digunakan sebagai sebuah aksesoris akan tetapi emas juga sudah dimanfaatkan sebagai salah satu pilihan investasi dan investasi emas merupakan salah satu pilihan yang paling populer untuk para investor pemula dikarenakan pergerakan harga emas relatif lebih stabil dan mekanismenya tidak serumit jika dibandingkan dengan investasi di forex atau saham. Walaupun mekanismenya tidak terlalu rumit bukan berarti seorang investor tidak perlu melakukan analisis sebelum membeli ataupun menjual emas.
+
+Salah satu analisis yang dapat dilakukan oleh para investor pemula sebelum membeli atau menjual emas adalah analisis sentimen dari berita-berita yang diberitakan oleh media mengenai topik yang berhubungan. Berita-berita yang diberitakan oleh media sebenarnya dapat langsung diasumsikan oleh para pembacanya apakah berita tersebut memiliki aspek positif atau negatif dengan berpikir kritis, akan tetapi tidak jarang pembaca berita terkecoh dalam menafsirkan aspek yang terkandung dari berita tersebut yang dapat mengakibatkan kerugian terhadap para investor terutama bagi para investor yang hanya memanfaatkan analisis sentimen sebagai acuan berinvestasi emas. Dengan adanya <i>aspect-based sentiment analysis</i> dengan menggunakan NLP, diharapkan para investor tidak perlu repot-repot untuk menelaah apakah berita yang diberitakan media mengandung aspek positif yang dapat menaikan harga emas ataupun sebaliknya jika berita tersebut mengandung aspek negatif.
+
+<b>Bagaimana Melakukan <i>Aspect Based Sentiment Analysis</i> Dengan NLP</b>
+
+Ada beberapa pendekatan yang dapat dilakukan untuk melakukan analisis sentimen dengan NLP di R, dari setiap pendekatan yang dilakukan tentunya pasti ada kelebihan dan kekurangan. Sebelum membahas lebih mendalam mengenai kelebihan dan kekurangan dari setiap pendekatan yang akan dilakukan mari kita coba pahami bagaimana melakukan <i>aspect-based sentiment analysis</i>.
+
+Secara garis besar untuk melakukan <i>aspect-based sentiment analysis</i> ada 2 langkah yang harus dilakukan yaitu, <i>Data Pre-Processing</i> & <i>Model Preparation</i>.
+
+* <i>Data Pre-Processing</i>: Text preprocessing adalah suatu proses untuk menyeleksi data text agar menjadi lebih terstruktur lagi dengan melalui serangkaian tahapan. Sedikit tambahan, teks preprocessing merupakan salah satu implementasi dari <i>text mining</i>. <i>Text mining</i> sendiri adalah suatu kegiatan menambang data, di mana data yang biasanya diambil berupa text yang bersumber dari dokumen-dokumen yang memiliki goals untuk mencari kata kunci yang mewakili dari sekumpulan dokumen tersebut sehingga nantinya dapat dilakukan analisis hubungan antara dokumen-dokumen tersebut.
+
+* <i>Model Preparation</i>: Langkah ini adalah langkah lanjutan, di sini kita akan mulai berkecimpung dengan model yang akan digunakan. Beberapa langkah yang akan dilakukan terlebih dahulu di sini adalah <i>cross validation</i>, <i>model evaluation</i> & <i>model interpretation</i>. Untuk detail dari setiap tahapan yang akan dilakukan pada langkah <i>Model Preparation</i> akan dijelaskan lebih mendetail lagi pada tiap sub-bagiannya.
+
+# Library Setup
+
+```{r, message=FALSE, warning=FALSE}
+# Data Wrangling
+library(tidyverse)
+library(rwhatsapp)
+library(wordcloud)
+
+# Text Preprocessing
+library(textclean)
+library(stringr)
+library(tm)
+
+# Cross Validation
+library(rsample)
+
+# Machine Learning
+## Naive Bayes
+library(e1071)
+## LSTM
+library(keras)
+
+# Machine Learning Evaluation
+library(caret)
+```
+
+# Explorasi Data {.tabset}
+
+## Read Data {.tabset}
+
+Data yang akan digunakan di sini adalah data yang berasal dari [kaggle](https://www.kaggle.com/ankurzing/sentiment-analysis-in-commodity-market-gold). 
+
+```{r, message=FALSE, warning=FALSE}
+gold <- read.csv("dataset/gold-dataset.csv")
+head(gold, 3)
+```
+
+Dari beberapa kolom di atas sebenarnya yang paling penting adalah kolom `News` & `Price.Sentiment`, kolom `News` berisikan berita mengenai harga emas dan pada kolom `Price.Sentiment` beriskan informasi mengenai apakah berita tersebut memberikan aspek positif, negatif, netral, atau tidak memberikan efek apa-apa. Oleh karena itu mari kita hilangkan kolom-kolom yang lainnya sembari kita ubah tipe data untuk kolom `Price.Sentiment` menjadi factor dikarenakan memiliki unique value yang berulang-ulang.
+
+```{r, message=FALSE, warning=FALSE}
+gold_new <- gold %>% 
+  select(News, Price.Sentiment) %>% 
+  mutate(Price.Sentiment = as.factor(Price.Sentiment))
+
+glimpse(gold_new)
+```
+
+Supaya kita bisa lebih memahami setiap pengaruh sentiment yang ada terhadap harga emas, berikut penjelasannya:
+ 
+* `Positive Sentiment`: Aspek positif pada berita mengenai harga emas akan cenderung meningkatkan harga emas tersebut.
+* `Negative Sentiment`: Aspek negatif pada berita mengenai harga emas akan cenderung menurunkan harga emas tersebut.
+* `Neutral Sentiment`: Aspek netral pada berita mengenai harga emas tidak akan memberika efek apapun terhadap emas tersebut.
+* `None Sentiment`: Aspek none pada berita mengenai harga emas sama seperti dengan aspek netral, akan tetapi aspek none itu hanya muncul pada kalimat yang mengandung unsur pertanyaan.
+
+## Proporsi Target Variabel {.tabset}
+
+```{r}
+gold$Price.Sentiment %>% 
+  table() %>% 
+  prop.table()
+```
+
+Dari hasil observasi, kita mengetahui bahwa total observasi untuk setiap sentiment berbeda-beda. Sentiment yang paling banyak pada data kita adalah sentiment yang memiliki aspek negatif, lalu diikuti dengan aspek postif, aspek none dan aspek netral. Idealnya memang ketika kita menghadapi data yang tidak seimbang, kita akan melakuakn penyeimbangan data dengan metode <i>upsample</i> ataupun <i>downsample</i>, akan tetapi kita akan membiarkan data yang kita tidak seimbang untuk mencari tahu apakah model yang kita gunakan dapat memprediksi dengan baik atau tidak terhadap data yang tidak seimbang proporsinya.
+
+## Karakteristik Teks{.tabset}
+
+Untuk mengetahui teks atau token mana yang dapat mewakili apakah sebuah berita mengadung aspek adalah positf, negatif, netrak atau none, kita bisa  menggunakan `library(wordcloud)` karena wordcloud adalah alat visualisasi yang dapat membantu kita untuk menyajikan data teks dalam format yang sederhana dan jelas. Nantinya dalam visualiasi akan coba kita lihat 10 kata yang paling banyak muncul untuk setiap aspek sentiment yang ada pada berita kita.
+
+* Karakteristik Teks Dengan Aspek Postif
+
+```{r, message=FALSE, warning=FALSE, fig.width=4, fig.height=2}
+pos <- gold %>% 
+  filter(Price.Sentiment == "positive") %>% 
+  select(News)
+  
+wordcloud(words = as.matrix(pos),
+          max.words = 10, 
+          scale = c(2.5, 1.25),
+          random.order=FALSE, 
+          rot.per=0.5,
+          colors=brewer.pal(2, "Dark2"))
+```
+
+* Karakteristik Teks Dengan Aspek Negatif
+
+```{r, message=FALSE, warning=FALSE, fig.width=4, fig.height=2}
+neg <- gold %>% 
+  filter(Price.Sentiment == "negative") %>% 
+  select(News)
+  
+wordcloud(words = as.matrix(neg),
+          max.words = 10, 
+          scale = c(2.5, 1.25),
+          random.order=FALSE, 
+          rot.per=0.5,
+          colors=brewer.pal(2, "Dark2"))
+```
+
+* Karakteristik Teks Dengan Aspek Netral
+
+```{r, message=FALSE, warning=FALSE, fig.width=4, fig.height=2}
+neg <- gold %>% 
+  filter(Price.Sentiment == "neutral") %>% 
+  select(News)
+  
+wordcloud(words = as.matrix(neg),
+          max.words = 10, 
+          scale = c(2.5, 1.25),
+          random.order=FALSE, 
+          rot.per=0.5,
+          colors=brewer.pal(2, "Dark2"))
+```
+
+* Karakteristik Teks Dengan Aspek none
+
+```{r, message=FALSE, warning=FALSE, fig.width=4, fig.height=2}
+neg <- gold %>% 
+  filter(Price.Sentiment == "none") %>% 
+  select(News)
+  
+wordcloud(words = as.matrix(neg),
+          max.words = 10, 
+          scale = c(2.5, 1.25),
+          random.order=FALSE, 
+          rot.per=0.5,
+          colors=brewer.pal(2, "Dark2"))
+```
+
+Dari visualisasi di atas, ada 2 warna yang digunakan untuk mewakili kata-kata mana yang paling sering digunakan yaiut warna ungu dan hijau. Kata-kata yang berwarna ungu adalah kata yang paling banyak digunakan dalam teks berita untuk setiap aspek sentimentnya karena kata-kata yang berwarna ungu memiliki ukuran paling besar dan berada di tengah. Dari keempat sentiment yang ada, hanya kata `gold` saja yang diberikan warna ungu oleh fungsi `wordcloud()`, hal tersebut bisa dibilang wajar karena data yang kita gunakan adalan data teks berita yang membahas tentang emas.
+
+Untuk kata-kata yang berwarna hijau bukan berarti tidak penting karena fungsi wordcloud() hanya menampilkan karakteristik teks berdasarkan frekuensi term setiap kata pada setiap klasifikasi berita. Kata-kata yang berwana hijau ini, merupakan 9 kata lainnya yang paling sering muncul untuk pada setiap aspeknya.
+
+# Data Teks Pre-Processing {.tabset}
+
+Pada pembahasan di atas, belum sempat disebutkan tahapan-tahapan apa saja yang harus dilakukan untuk membuat data teks kita lebih terstruktur. Tahapan tersebut meliputi tahapan <i>case folding</i> dan <i>tokenizing</i>, sebenarnya ada beberapa tahapan lainnya yang bisa dilakukan, akan tetapi tidak ada aturan pasti, semua itu tergantung dengan jenis serta kondisi data yang kita miliki.
+
+Apa itu <i>case folding</i> dan <i>tokenizing</i>, untuk lebih memahami kedua tahapan tersebut mari kita memulai teks pre-processing.
+
+## Case Folding {.tabset}
+
+Tahapan pertama yang biasanya dilakukan adalah tahapan case folding. Tahapan ini hampir selalu disertakan ketika melakukan text preprocessing. Mengapa? Karena data yang kita miliki tidak selalu terstruktur dan konsisten dalam penggunaan huruf kapital. Jadi, peran dari case folding adalah untuk menyamaratakan penggunaan huruf kapital. Misalnya data teks yang kita dapat berupa tulisan "DaTA SCIence" maka dengan case folding artinya kita mengubah semua huruf menjadi huruf kecil (lowercase) semua.  
+
+Selain mengubah semua huruf menjadi huruf kecil, kita akan mempersiapkan data teks menjadi bentuk yang bisa digunakan oleh machine learning, dengan melakukan beberapa hal ini.
+
+* Menghilangkan tanda baca & simbol
+* Menghilangkan angka
+* Menghilangkan kata-kata yang kurang formal
+* Menggantikan huruf kapital menjadi huruf kecil
+* Menghilangkan spasi yang berlebih
+* Metransformasi kata-kata yang kurang formal atau baku
+* Menghilangkan singkatan
+
+Karakter lain yang bukan termasuk huruf, seperti angka, simbol dan tanda baca dianggap sebagai delimiter, delimiter itu bisa dihapus. Tujuan dari menghilangkan beberapa hal tersebut adalah, mesin tidak bisa memahami makna dari karakter-karakter tersebut. 
+
+Sebenarnya ada beberapa hal lainnya yang dapat dilakukan seperti menghilangkan URL & emoticon akan tetapi 2 hal tersebut tidak dilakukan, karena pada naskah teks tidak ada link URL dikarenakan sudah ada satu kolom yang mewakili link URL. Selain itu, biasanya dalam naskah teks berita juga tidak memiliki emoticon, terlebih lagi naskah teks berita yang kita gunakan adalah berita formal yang membahas tentang investasi emas. Akan tetapu untuk memastikan bahwa dalam naskah teks kita tidak terdapat 2 hal tersebut, kita bisa melakukan pengecekan dengan menggunakan cara di bawah ini.
+
+<b> Mengecek apakah ada URL pada kolom <i>News</i></b>
+
+```{r, message=FALSE, warning=FALSE}
+# Membuat sebuah object yang berisikan pattern yang biasanya ada pada sebuah link URL
+url_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+
+# Membuat object baru yang berisikan data dari object gold_new
+check_url <- gold_new
+
+# Menarik semua link URL yang ada dengan menggunakan fungsi di bawah ini 
+check_url$ContentURL <- str_extract(check_url$News, url_pattern)
+head(check_url)
+```
+
+Dengan memanfaatkan sebuah fungsi `str_extract()` dari `library(stringr)`, kita dapat memastikan apakah pada kolom `News` terdapat link URL, dikarenakan pada fungsi `str_extract()` dapat menarik semua isi pada teks di kolom `News` dengan memberitahu pattern yang biasanya terjadi pada sebuah link URL. Jika dilihat hasil yang muncul dari 6 data teratas value yang muncul adalah <b>NA</b>, dari situ kita bisa asumsikan bahwa jika value yang muncul adalah <b>NA</b> berarti tidak ada link URL. Untuk melihat apakah di sisa data yang ada memiliki link atau tidak, kita akan menggunakan fungsi base `unique()` untuk melihat apakah ada value lain selain NA.
+
+```{r}
+unique(check_url$ContentURL)
+```
+
+Dari hasil pengecekan di atas, tidak ada unique value selain NA oleh karena itu kita dapat menarik kesimpulan bahwa tidak ada link URL pada teks yang ada.
+
+<b> Mengecek apakah ada emoticon pada kolom <i>News</i></b>
+
+Untuk memastikan apakah di dalam teks yang kita memiliki emoticon atau tidak, di sini kita akan memanfaatkan sebuah `library(rwhatsapp)`. Nantinya di dalam library tersebut akan ada sebuah fungsi yang bernama `lookup_emoji()` yang dapat memeriksa apakah di dalam teks yang ada memiliki sebuah emoticon atau tidak.
+
+```{r}
+# Implementasi dari fungsi lookup_emoji
+check_emoticon <- rwhatsapp::lookup_emoji(gold_new, text_field = "News") 
+
+head(check_emoticon)
+```
+
+Fungsi `lookup_emoji()` nantinya akan membuat 2 kolom baru yaitu kolom <i>emoji</i> dan <i>emoji_name</i>, jika pada kedua kolom itu valuenya adalah `<chr [sebuah angka]>` maka di dalam sebuah kalimat itu memiliki emoticon akan tetapi jika valuenya adalah `<NULL>`  maka di dalam sebuah kalimat itu tidak memiliki emoticon.
+
+```{r}
+unique(check_emoticon$emoji)
+unique(check_emoticon$emoji_name)
+```
+
+Dari hasil pengecekan di atas, tidak ada unique value selain NULL oleh karena itu kita dapat menarik kesimpulan bahwa tidak ada emoticon pada teks yang ada. Setelah mengecek apakah kita perlu menghilangkan link URL dan emoticon pada teks kita, kita bisa langsung memulai tahapan data pre-processing.
+
+### Case Folding Execution 
+
+Dalam proses case folding kita akan menggunakan dua library yang berbeda yaitu `library(stringr)` & `library(texclean)`, untuk mengetahui fungsi apa saja yang bisa kita manfaatkan, mari kita gunakan teks di bawah ini sebagai contoh.
+
+```{r}
+example <- "Hey! w8 a minuteee, i'll   come around 10..."
+```
+
+> Hey! w8 a minute, LMGTFY right now...
+
+<b>Library(stringr)</b>
+
+* <i> Change to Lower Case</i>
+
+```{r}
+example %>% 
+  str_to_lower()
+```
+
+* <i>Replace Punctuation</i>
+
+```{r}
+example %>% 
+  str_replace_all("[[:punct:]]", " ")
+```
+
+* <i>Replace Digit</i>
+
+```{r}
+example %>% 
+  str_replace_all("[[:digit:]]", " ") 
+```
+
+<b>Library(textclean)</b>
+
+* <i>Replace Slang Words</i>
+
+```{r, message=FALSE, warning=FALSE}
+example %>% 
+  replace_internet_slang(replacement = paste0('{{', lexicon::hash_internet_slang[[2]], '}}'))
+```
+
+* <i>Replace Word Elongation</i>
+
+```{r}
+example %>% 
+  replace_word_elongation()
+```
+
+* <i>Replace Contraction</i>
+
+```{r}
+example %>% 
+  replace_contraction() 
+```
+
+* <i>Replace Whitespace</i>
+
+```{r}
+example %>% 
+  replace_white()
+```
+
+Semua yang kita lakukan di atas, hanya untuk memperlihatkan proses teks pre-processing yang terjadi satu per satu. Nantinya kita bisa merangkum, semua proses yang kita lakukan di atas dengan konsep piping.
+
+```{r}
+teks_clean <- gold_new %>% 
+  mutate(
+    News_Clean = News %>% 
+      str_to_lower() %>% 
+      replace_internet_slang(replacement = paste0('{{ ', lexicon::hash_internet_slang[[2]], ' }}')) %>% 
+      replace_contraction() %>% 
+      replace_word_elongation() %>% 
+      str_replace_all("[[:punct:]]", " ") %>% 
+      str_replace_all("[[:digit:]]", " ") %>% 
+      replace_white() %>% 
+      str_squish()
+  )
+
+teks_clean %>% 
+  select(News, News_Clean) %>% 
+  head(5)
+```
+
+Jika dilihat dari observasi di atas, ada 1 simbol yang belum berhasil dibersihkan yaitu simbol `$`. Maka dari itu mari kita coba tambahkan sebuah fungsi `str_replace_all("\\$", "")`, fungsi tersebut nantinya akan bermanfaat untuk menghilangkan simbol `$` yang ada. 
+
+```{r}
+teks_clean <- gold_new %>% 
+  mutate(
+    News_Clean = News %>% 
+      str_to_lower() %>% 
+      replace_internet_slang(replacement = paste0('{{ ', lexicon::hash_internet_slang[[2]], ' }}')) %>% 
+      replace_contraction() %>% 
+      replace_word_elongation() %>% 
+      replace_number(remove = T) %>% 
+      str_replace_all("[[:punct:]]", " ") %>% 
+      str_replace_all("[[:digit:]]", " ") %>% 
+      str_replace_all("\\$", "") %>% 
+      replace_white() %>% 
+      str_squish()
+  )
+
+teks_clean %>% 
+  select(News, News_Clean) %>% 
+  head(5)
+```
+
+Dengan menambahkan sebuah fungsi khusus, kita sudah berhasil menghilangkan simbol `$` yang masih tersisa. Dari sini kita bisa menyimpulkan bahwa, terkadang kita harus lebih spesifik untuk membersihkan teks yang kita miliki. Dan tidak ada salahnya jika kedepannya kita menggabungkan beberapa fungsi dari library lainnya untuk membantu kita dalam melalui tahapan case folding ini, sehingga teks yang kita miliki benar-benar siap untuk diproses lebih lanjut.
+
+## Tokenizing {.tabset}
+
+Tahapan selanjutnya yang bisa kita lakukan ada <i>tokenizing</i>, tokenisasi pada dasarnya adalah pemisahan frasa, kalimat, paragraf, atau seluruh dokumen teks menjadi unit yang lebih kecil, seperti kata atau istilah individual. Masing-masing unit yang lebih kecil ini disebut token.
+
+Berikut adalah contoh ilustrasi dari hasil tahapan tokenisasi,
+
+![\*Tokenisasi](tokenisasi.png)
+
+Sebelum melakukan tahapan tokenisasi ini, ada 2 analisis yang bisa kita lakukan nantinya yaitu,
+
+* Menentukan jumlah kata yang ingin digunakan berdasarkan jumlah frekuensi kemunculan yang paling banyak
+* Menghitung jumlah kata dalam sebuah teks
+
+Pertama-tama yang akan kita bahas adalah menghitung frekuensi kata yang hadir dari total keseluruhan kata yang ada.
+
+```{r}
+paste(teks_clean$News_Clean, collapse = " ") %>% 
+  str_split(" ") %>% 
+  unlist() %>% 
+  n_distinct()
+```
+
+Tahapan yang dilakukan di atas adalah tahapan di mana kita menghitung jumlah kata yang berada dalam keseluruhan teks kita, total terdapat 4537 kata. Dari keseluruhan kata tersebut, kita bisa mengurangi menjadi setengah ataupun membiarkan mesin kita menggunakan keseluruhan kata yang ada. Penentuan banyaknya kata yang harus dipakai itu sendri belum ada peraturan yang pasti, di sini mari kita coba gunakan sepertiga dari total keseluruhan kata yang ada. 
+
+Untuk sementara waktu mari kita gunakan sepertiga dari total keseluruhan data yang ada, nantinya total kata yang akan kita gunakan akan berdasarkan jumlah frekuensi kemunculan terbanyak, fungsi yang akan kita gunakan di bawah ini dari `library(keras)` akan secara otomatis menghitung jumlah frekuensi kemunculan kata.
+
+```{r, message=FALSE, warning=FALSE}
+num_words = 1500
+
+tokenizer <- text_tokenizer(num_words = num_words) %>% 
+  fit_text_tokenizer(teks_clean$News_Clean)
+```
+
+Tujuan dari pengurangan kata itu sendiri adalah untuk menghilangkan kata-kata yang jarang muncul dalam teks kita, dengan harapan model kita hanya akan mempelajari atau mencari pola dari setiap kata yang sering digunakan untuk setiap target variable yang ada.
+
+Selanjutnya mari coba kita bahas mengenai jumlah kata dalam sebuah teks. Untuk mengetahui seberapa panjang kata yang berada pada sebuah kalimat kita bisa menggunakan fungsi di bawah ini.
+
+```{r}
+maxlen <- max(str_count(teks_clean$News_Clean, "\\w+")) + 1 
+maxlen
+```
+
+Mungkin di sini masih cukup membingungkan kenapa kita memerlukan informasi panjang kata dalam sebuah teks, hal tersebut akan coba diperjelas pada saat kita masuk ke cross validasi, dikarenakan tahapan tokenisasi baru akan benar-benar kita lakukan setelah kita memisah data kita menjadi data train & data test.
+
+## Label Endocing {.tabset}
+
+Sebelum kita memisahkan data kita, ada satu tahapan yang perlu kita lakukan. Tahapan ini bisa dibilang sebuah tahapan yang tidak boleh kita tinggakan ketika kita ingin menggunakan sebuah model LSTM, dikarenakan pada model tersebut tidak bisa membaca target variabel yang berbentuk string. Maka dari itu kita akan megubahnya terlebih dahulu menjadi angka dengan menggunakan fungsi di bawah ini.
+
+```{r}
+data <- teks_clean %>% 
+  mutate(label = factor(Price.Sentiment, levels = c("negative", "positive", "neutral", "none")),
+         label = as.numeric(label),
+         label = label - 1) %>%
+  select(News_Clean, label) %>%
+  na.omit()
+head(data, 5)
+```
+
+# Cross Validasi
+
+Tahapan cross validasi adalah metode statistik yang dapat digunakan untuk mengevaluasi kinerja model atau algoritma di mana data dipisahkan menjadi tiga subset yaitu data pembelajaran, data validasi dan data evaluasi. Fungsi dari ketiga data tersebut adalah
+
+* Data pembelajaran: Data ini akan digunakan untuk melatih model machine learning, karena model tersebut akan mempelajari pola data yang ada berdasarkan setiap target variabel yang ada.
+* Data validasi: Data ini digunakan sebagai test pertama terhadap model kita mengenai data yang tidak terlihat.
+* Data evaluasi: Data evaluasi adalah data untuk pengujian sekali lagi memvalidasi bahwa model tersebut dapat membuat prediksi yang akurat. Jika data akhirnya peforma pada data evaluasi tidak jauh berbeda dengan data validasi, itu menjadi sebuah indikator bahwa model yang kita buat sudah baik
+
+```{r}
+set.seed(100)
+
+intrain <- initial_split(data = data, prop = 0.8, strata = "label")
+
+data_train <- training(intrain)
+data_test <- testing(intrain)
+
+set.seed(100)
+inval <- initial_split(data = data_test, prop = 0.5, strata = "label")
+
+data_val <- training(inval)
+data_test <- testing(inval)
+```
+
+Setelah berhasil memisahkan datanya menjadi tiga bagian, mari kita implementasikan hasil temuan pada bagian tokenisasi di atas dan penjelasan lanjutan mengenai kenapa kita harus mengetahui panjang maksimal dari kata pada sebuat kalimat akan dilanjutkan di bawah ini.
+
+```{r}
+# prepare x
+data_train_x <- texts_to_sequences(tokenizer, data_train$News_Clean) %>%
+  pad_sequences(maxlen = maxlen, padding = "pre", truncating = "post")
+
+data_val_x <- texts_to_sequences(tokenizer, data_val$News_Clean) %>%
+  pad_sequences(maxlen = maxlen, padding = "pre", truncating = "post")
+
+data_test_x <- texts_to_sequences(tokenizer, data_test$News_Clean) %>%
+  pad_sequences(maxlen = maxlen, padding = "pre", truncating = "post")
+
+# prepare y
+data_train_y <- to_categorical(data_train$label, num_classes = 4)
+data_val_y <- to_categorical(data_val$label, num_classes = 4)
+data_test_y <- to_categorical(data_test$label, num_classes = 4)
+```
+
+Fungsi `texts_to_sequence()`, akan membuat matriks hasil transformasi text ke bentuk urutan angka (integer). Setelah itu diwrap dengan fungsi `pad_sequences()`, fungsi tersebut harus digunakan karena panjang teks bisa berbeda, dengan menggunakan fungsi `pad_sequences()` untuk memastikan semua teks memiliki panjang yang sama dengan memasukkan nilai 0 jika teks terlalu pendek. Berikut contoh ilustrasinya:
+
+```{r}
+texts_to_sequences(tokenizer, c("Excellent work!", 
+                                "Good job bro, keep hard work", 
+                                "Hey, how are you?")) %>% 
+  pad_sequences(maxlen = 5, padding = "pre", truncating = "post")
+```
+
+# Machine Learning Model {.tabset}
+
+Setelah mempersiapkan data teks yang ada, sekarang kita akan masuk ke tahapan pembuatan model machine learning. Fokus model yang akan dibuat untuk melakukan analisa sentiment adalah model <i>Long Short Term Memory (LSTM)</i>. Sebagai pembanding dari model LSTM, nantinya kita akan membuat sebuah model lagi, yaitu model <i>Naive Bayes</i>.
+
+## Model LSTM {.tabset}
+
+LSTM merupakan salah satu bagian dari Recurrent Neural Network (RNN). Jika LSTM adalah salah satu bagian dari RNN, kenapa kita tidak menggunakan RNN saja? Salah satu alasan kenapa kita menggunakan LSTM di sini dikarenakan LSTM bisa menampung informasi atau pola jauh lebih baik jika dibandingkan dengan RNN. Hal tersebut bisa terjadi karena adanya tambahan sinyal yang diberikan dari satu langkah waktu ke langkah waktu berikutnya, atau istilah yang bisanya digunakan untuk tambahan sinyal adalah <i>cell state/memory cell</i>. Selain dengan adanya <i>cell state</i>, didalam LSTM nantinya ada beberapa gate yang untuk memproses lebih lanjut setiap data yang ada.
+
+### Model LSTM VS Model RNN {.tabset}
+
+<b>Recurrent Neural Network (RNN)</b>
+
+```{r, echo = FALSE}
+knitr::include_graphics("rnn.gif")
+```
+
+Dari ilustrasi di atas, kita dapat melihat bahwa RNN sel hanya memiliki satu gate saja, jadinya setiap informasi informasi baru atau informasi dari RNN sel sebelumnya hanya akan diproses satu kali dengan menggunakan fungsi <i>Tanh</i>. Fungsi tanh digunakan untuk membantu mengatur nilai-nilai yang mengalir melalui jaringan. Fungsi tanh menekan nilai agar selalu antara -1 dan 1.
+
+Fungsi tanh memastikan bahwa nilai tetap antara -1 dan 1, sehingga mengatur output dari jaringan saraf. Anda dapat melihat bagaimana nilai yang sama dari atas tetap berada di antara batas yang diizinkan oleh fungsi tanh.
+
+```{r, echo = FALSE}
+knitr::include_graphics("tanh_activation.gif")
+```
+
+<b>Long Short Term Memory (LSTM)</b>
+
+![\*LSTM Sel](lstm_cell.png)
+
+Konsep inti LSTM adalah <i>cell state</i>, dan berbagai gerbangnya. <i>Cell state</i> bertindak sebagai jalan raya transportasi yang mentransfer informasi relatif sepanjang rantai urutan. Anda dapat menganggapnya sebagai "memori" jaringan. Keadaan sel, secara teori, dapat membawa informasi yang relevan selama pemrosesan urutan. Jadi, bahkan informasi dari langkah sebelumnya dapat diteruskan ke langkah berikutnya, yang dapat membantu untuk mengurangi efek memori jangka pendek. Saat <i>cell state</i> melanjutkan perjalanannya, informasi ditambahkan atau dihapus ke <i>cell state</i> melalui gerbang. Gerbang adalah jaringan saraf berbeda yang memutuskan informasi mana yang diizinkan pada keadaan sel. Gerbang dapat mempelajari informasi apa yang relevan untuk disimpan atau dilupakan selama pelatihan. Agar lebih mudah untuk dipahami, berikut ilustrasi dari proses yang terjadi pada setiap gerbang dan <i>cell state</i>
+
+* <i>Gerbang Pertama: Forget Gate</i>
+
+```{r, echo = FALSE}
+knitr::include_graphics("forget_gate.gif")
+```
+
+Pertama, kita memiliki <i>forget gate</i>. Gerbang ini memutuskan informasi apa yang harus dibuang atau disimpan. Informasi dari sel LSTM sebelumnya dan informasi dari input saat ini dilewatkan melalui fungsi <i>Sigmoid</i>. 
+
+Fungsi sigmoid nantinya akan menekan nilai input diantara 0 sampai 1. Itu berguna untuk memperbarui atau melupakan input data, karena angka apa pun yang dikalikan dengan 0 adalah 0, menyebabkan nilai menghilang atau "dilupakan." Setiap angka dikalikan dengan 1 adalah nilai yang sama sehingga nilainya tetap sama atau "dipertahankan". Jaringan dapat mempelajari data mana yang tidak penting sehingga dapat dilupakan atau data mana yang penting untuk disimpan. Jika nanti hasil yang dikeluarkan tidak bulat 0 atau 1, nilainya akan diperlakukan seperti ini, semakin mendekati 0 berarti akan dilupakan dan semakin mendekati 1 akan disimpan.
+
+```{r, echo = FALSE}
+knitr::include_graphics("sigmoid.gif")
+```
+
+* <i>Gerbang Kedua: Input Gate</i>
+
+Pada bagian ini akan menentukan informasi apa yang dirasa relevan untuk dilanjutkan atau tidak, penentuannya dilakukan dengan melakukan perkalian antara hasil output tanh dengan output sigmoid. Hasil dari output sigmoid akan menentukan informasi mana yang penting untuk disimpan dari output tanh.
+
+```{r, echo = FALSE}
+knitr::include_graphics("input_gate.gif")
+```
+
+* <i>Cell State</i>
+
+Seperti yang disampaikan di atas, salah satu keunggulan dari model LSTM adalah dapat memiliki tambahan sinyal baru atau <i>cell state</i>. Tambahan sinyal tersebut diperoleh dari hasil pengolahan informasi pada <i>forget gate & input gate</i>. Hasil tambahan sinyal baru ini akan diterus ke LSTM selanjutnya untuk diproses lebih lanjut lagi.
+
+```{r, echo = FALSE}
+knitr::include_graphics("cell_state.gif")
+```
+
+* <i>Gerbang Ketiga: Output Gate</i>
+
+Selain informasi tambahan sinyal baru yang diteruskan, akan ada satu informasi lagi yang akan diteruskan ke LSTM sel selanjutnya, informasi tersebut adalah hasil dari <i>output gate</i>. 
+
+Untuk mendapatkan hasil dari <i>output gate</i>, kita akan memasukan informasi dari tambahan sinyal baru kedalam fungsi tanh lalu hasilnya akan dikalikan dengan infomasi dari LSTM sel sebelumnya yang sudah dimasukan kedalam fungsi sigmoid. Hasil dari perkaliannya itu yang akan dibawa ke langkat berikutnya.
+
+```{r, echo = FALSE}
+knitr::include_graphics("output_gate.gif")
+```
+
+Sedikit rangkuman dari penjelasan di atas, <i>forget gate</i> digunakan untuk memutuskan informasi apa yang relevan untuk disimpan dari langkah sebelumnya. <i>Input gate</i> digunakan untuk memutuskan informasi apa yang relevan untuk ditambahkan dari langkah saat ini. <i> Output gate</i> digunakan untuk menentukan informasi apa yang seharusnya diteruskan ke LSTM sel selanjutnya bedasarkan informasi <i>cell state</i>.
+
+### Arsitektur LSTM {.tabset}
+
+Dalam membuat model LSTM, kita akan meminjam `library(keras)` dari Tensorflow Python. Dari library tersebut, kita akan menggunakan fungsi `keras_model_sequential()` untuk membangun arstitektur model LSTM. Secara umum arsitektur pada setiap model Neural Network setidaknya harus memiliki 3 komponen berikut ini, <i>Input Layer, Hidden Layer dan Output Layer</i>. Selain dari 3 komponen yang sudah disebutkan, sebenarnya kita bisa menambahkan beberapa layer lagi sesuai dengan kebutuhan, akan tetapi untuk model LSTM yang akan kita buat, kita tidak akan menambahkan layer lainnya. 
+
+<br><b>Layer Pertama: Input Layer</b>
+
+Layer utama yang akan dibuat adalah input layer atau biasanya juga disebut sebagai <i><b>embedding layer</b></i>. Pada layer ini nantinya akan diisi dengan kata-kata yang ada pada setiap berita. Pada lapisan ini juga akan mempelajari pengaruh dari posisi atau kedekatan anatara satu kata dengan kata yang lainnya. Sebagai contoh, kata <i>raja</i> biasanya ditempatkan di dekat kata <i>pria</i> dan kata <i>ratu</i> biasanya ditempatkan di dekat kata <i>wanita</i>.  
+
+Berikut ini adalah beberapa parameter yang dapat diisi pada input layer/embedding layer:
+
+* `input_dim`: Pada parameter ini bisa diisi dengan jumlah kosakata dalam data teks. Misalnya, jika data Anda adalah bilangan bulat yang dikodekan ke nilai antara 0-10, maka ukuran kosakatanya adalah 11 kata.
+* `input_length`: Pada parameter ini bisa diisi dengan jumlah kosakata yang paling panjang yang terdapat pada satu kalimat. Misalnya, dalam 10 dokumen, 9 di antaranya hanya terdiri dari 50 kata dan satu dokumen terdiri 100 kata, maka parameter ini akan diisi ini akan menjadi 100.
+* `output_dim`: Ini adalah ukuran ruang vektor di mana kata-kata akan disematkan. Ini mendefinisikan ukuran vektor output dari lapisan ini untuk setiap kata. Misalnya, bisa 32 atau 100 atau bahkan lebih besar. Sedikit catatan di sini, tidak ada aturan khusus dalam menentukan dimensi vektor.
+
+<br><b>Layer Kedua: Hidden Layer</b>
+
+Layer kedua adalah hidden layer dan pada layer ini kita bisa menambahkan berbagai macam layer, akan tetapi layer yang akan kita tambahkan di sini adalah <i>LSTM layer</i> karena model yang kita ingin buat adalah model LSTM. Pada layer ini nantinya setiap input atau infromasi yang berasal dari embedding layer akan proses lebih lanjut lagi.
+
+Berikut ini adalah beberapa parameter yang dapat diisi pada layer LSTM:
+
+* `units`: Parameter ini nantinya bisa diisi dengan dengan jumlah <i>memroy cell</i> yang ingin disiapkan untuk mempelajari atau mengingat informasi yang dikeluarkan atau diberikan dari embedding layer. Sedikit catatan di sini, tidak ada aturan khusus dalam menentukan jumlah <i>memory cell</i>, akan tetapi jika terlalu banyak model LSTM akan beresiko untuk <i>overfit</i>.
+* `dropout`: Parameter dropout ditambahkan untuk mengurangi risiko overfit, range nilai dropout antara 0 hingga 1. Nilai yang umum digunakan yaitu 0.2 hingga 0.5. Jika nilai makin mendekati 0 akan cenderung overfit, sedangkan makin mendekati 1 memiliki risiko underfit.
+
+<br><b>Layer ketiga: Output Layer</b>
+
+Layer ketiga adalah output layer atau sering juga disebut sebagai <i>dense layer</i>. Pada layer ini nantinya kita bisa mengatur berapa banyak kelas yang ingin dihasilkan, kelas di sini akan kita samakan dengan target variabel yang ingin kita klasifikasikan.
+
+Berikut ini adalah beberapa parameter yang dapat diisi pada layer LSTM:
+
+* `units`: Parameter units di sini fungsinya berbeda dengan parameter unit pada `layer lstm`, parameter units di sini nantinya akan kita isi dengan jumlah target variabel dari data kita. 
+* `activation`: Parameter ini berfungsi untuk mengtransformasi nilai dari setiap input, sehingga nilainya nanti tidak terlalu besar dan dapat ditafsirkan menjadi sebuah kelas yang sesuai dengan jumlah target variable kita. Berikut adalah beberapa pilihan dari parameter `activation` yang dapat kita gunakan, `sigmoid` (hasil transformasi nilainya di antara 0-1 cocok digunakan untuk binary class), `softmax` (hasil transformasi menjadi nilai probabilitas antara 0-1 cocok dgunakan untuk multiclass) dan `tanh` (hasil transformasi nilainya di antara -1 hingga 1.)
+
+```{r}
+model <- keras_model_sequential() %>%
+  # layer input
+  layer_embedding(
+    name = "input",
+    input_dim = num_words,
+    input_length = maxlen,
+    output_dim = 32
+  ) %>%
+  # layer lstm 
+  layer_lstm(
+    name = "lstm",
+    units = 64,
+    dropout = 0.5,
+    return_sequences = FALSE, 
+    kernel_initializer = initializer_random_uniform(minval = -0.05, maxval = 0.05)
+  ) %>%
+  # layer output
+  layer_dense(
+    name = "output",
+    units = 4,
+    activation = "softmax"
+  )
+```
+
+Supaya lebih terbayang bagaimana hasil dari setiap layer yang kita buat, mari kita lihat ilustrasi di bawah ini.
+
+![\*Arsitektur](single_hidden_layer.jpg)
+
+Setiap layer yang kita buat nantinya akan tersusun seperti ilustrasi di atas. Sedangkang untuk proses pengolahan datanya akan dimulai dari setiap unit <i>input layer</i>, lalu setiap data tersebut akan dikirim ke setiap unit LSTM yang terdapat pada bagian <i>hidden layer</i> untuk diproses lebih lanjut. Setelah itu hasilnya akan dikirimkan ke <i>output layer</i> untuk ditentukan data tersebut lebih cocok untuk masuk ke kelas yang mana. Semua proses tersebut akan terus diulang sampai semua data berhasil diproses. 
+
+Setelah berhasil membangun arsitektur, langkah terkahir yang harus kita lakukan adalah menambahkan beberapa parameter berikut ini, <i>loss function, optimizer & metrics</i>. Penambahan ketiga parameter tersebut biasanya disebut sebagai <i>compilation/model compile</i>.
+
+Berikut penjelasan untuk masing-masing parameter,
+
+* `loss function`: Parameter ini digunakan untuk mengukur efektivitas model kita dalam melakukan prediksi pada tiap epoch (iterasi) dilihat dari gap error antara prediksi dan aktualnya. Pada kasus kategori 2 kelas, lost function yang digunakan adalah `binary_crossentropy` sedangkan untuk kasus multiclass menggunakan `categorical_crossentropy`.
+* `optimizer`: Parameter ini nantinya akan diisi dengan metode algoritmik yang dapat membantu model kita memaksimalkan hasil prediksi. Variansi dari optimizer yang dapat digunakan ada banyak sekali. Berikut adalah [variasi dari optimzer](https://towardsdatascience.com/overview-of-various-optimizers-in-neural-networks-17c1be2df6d5) yang bisa digunakan. 
+
+```{r}
+model %>% compile(
+  optimizer = optimizer_adam(learning_rate = 0.001),
+  metrics = "accuracy",
+  loss = "categorical_crossentropy"
+)
+
+summary(model)
+```
+
+Sekarang kita sudah bisa memasuki tahapan training model. Kita dapat menggunakan fungsi `fit()`, nantinya dalam fungsi tersebut ada dua parameter yang harus kita perhatikan, yaitu:
+
+*`epoch`: parameter ini nantinya akan mengatur banyaknya iterasi pengulangan pada saat pelatihan model. Penentuan banyaknya iterasi juga tidak memiliki aturan khusus, akan tetapi  <b>semakin banyak epoch</b> maka <b>error bisa lebih kecil</b>, namun proses <b>training semakin lama</b>  dan rentan <b>overfitting</b>.
+* `batch_size`: parameter ini nantinya akan mengatur banyak jumlah sampel yang dilatih pada tiap iterasi/epoch. Sama seperti epoch, penentuan jumlah batch size juga tidak memiliki aturan khusus, akan tetapi **semakin sedikit batch size** maka proses **training semakin lama** (karena proses optimasi model semakin banyak); namun bisa **mencegah komputasi terlalu besar** di 1 waktu sekaligus.
+  
+```{r}
+model_lstm <- model %>% fit(
+  data_train_x, data_train_y,
+  batch_size = 256, 
+  epochs = 10,
+  verbose = 1,
+  validation_data = list(
+    data_val_x, data_val_y
+  )
+)
+
+# model_lstm plot
+plot(model_lstm)
+```
+
+## Model Naive Bayes {.tabset}
+
+Setelah berhasil membuat model LSTM, sekarang kita akan membuat model Naive Bayes sebagai model pembandingnya. Model Naive Bayes itu sendiri bisa dikatakan sebuah model yang sangat populer dikarenakan pembuatan model ini bisa dikategorikan cukup mudah dan tidak memerlukan waktu lama ataupun tenaga yang besar. 
+
+Jika kita menggunakan model naive bayes, kita memiliki opsi lain dalam melakukan tahapan tokenisasi. Dalam melakukan tokenisasi di sini kita bisa menggunakan fungsi dari `library(tm)` dan menggunakan fungsi yang bernama `DocumentTermMatrix()`, akan tetapi sebelum kita menggunakan fungsi tersebut kita harus mengubah format text kita menjadi corpus terlebih dahulu dengan menggunakan fungsi `VCorpus(VectorSource)`.
+
+```{r, message=FALSE, warning=FALSE}
+teks_clean_nb <- VCorpus(VectorSource(teks_clean$News_Clean))
+trainx <- VCorpus(VectorSource(data_train$News_Clean))
+testx <- VCorpus(VectorSource(data_test$News_Clean))
+```
+
+Dapat dilihat di atas, kita sudah berhasil mengubah data teks kita yang sudah dibersihkan menjadi bentuk corpus, sekarang kita bisa memulai tahapan tokenisasi.
+
+```{r}
+teks_clean_nb <- DocumentTermMatrix(teks_clean_nb)
+trainx <- DocumentTermMatrix(trainx)
+testx <- DocumentTermMatrix(testx)
+```
+
+Sekarang kita bisa menentukan jumlah kata yang digunakan, akan tetapi di sini penentuan jumlah kata yang akan digunakan sedikit berbeda dengan cara LSTM. di sini kita akan menentukan kata-katanya berdasarkan minimal jumlah kemunculan kata tersebut dari total keseluruhan teks kita.
+
+```{r}
+freq_words <- findFreqTerms(teks_clean_nb, lowfreq = 100)
+
+trainx <- trainx[ , freq_words]
+testx <- testx[ , freq_words]
+```
+
+Tidak berhenti sampai disitu, di sini kita akan menggunakan sebuah fungsi bernama <i>Bernoulli Converter</i>. Fungsi Bernoulli Converter digunakan untuk mengubah nilai frekuensi pada DTM menjadi 1 atau 0,
+
+* Jika frekuensi dalam satu teks adalah 1 atau lebih dari 1 maka nilainya akan berubah menjadi 1
+* Jika frekuensi dalam satu teks di bawah 1 maka nilainya akan berubah menjadi 0
+
+```{r}
+bernoulli_conv <- function(x){
+        x <- as.factor(ifelse(x > 0, 1, 0))
+  return(x)
+}
+
+trainbn <- apply(trainx, MARGIN = 2, bernoulli_conv)
+testbn <- apply(testx, MARGIN = 2, bernoulli_conv)
+```
+
+Langkah terakhir yang perlu dilakukan adalah melakukan transformasi terhadap label numerik menjadi kategorikal.
+
+```{r}
+convert_label <- function(x)
+{
+  if( x == 0)
+  {
+    x <- "negative"
+  }
+  else if( x == 1)
+  {
+    x <- "postive"
+    }
+  else if( x == 2)
+  {
+    x <- "neutral"
+  }
+  else
+  {
+    x <- "none"
+  }
+}
+
+data_train$label_nb <- sapply(X = data_train$label, FUN = convert_label)
+data_test$label_nb <- sapply(X = data_test$label, FUN = convert_label)
+
+trainy <- as.factor(data_train$label_nb)
+testy <- as.factor(data_test$label_nb)
+```
+
+Setelah melewati beberapa tahapan di atas, sekarang kita sudah siap untuk membuat model Naive Bayes.
+
+```{r, message=FALSE, warning=FALSE}
+nbclassifier <- naiveBayes(trainbn, trainy, laplace = 0)
+```
+
+# Prediksi & Evaluasi {.tabset}
+
+Setelah melakukan serangkaian proses untuk membuat dua model yang dapat mengklasifikasikan teks berita, sekarang kita memasuki sebuah tahapan yang paling penting yaitu melakukan prediksi dan megevaluasi model yang sudah kita buat. Pada tahapan ini kita akan mengetahui bagaiamana peforma masing-masing model, selain itu kita akan melakukan komparasi dari kedua model.
+
+## Model LSTM {.tabset}
+
+```{r, message=FALSE, warning=FALSE}
+test_pred <- model %>%
+  predict_classes(data_test_x) %>%
+  as.vector()
+```
+
+```{r}
+eval_lstm <- confusionMatrix(
+  factor(test_pred,labels = c("negative", "neutral", "positive", "none")),
+  factor(data_test$label,labels = c("negative", "neutral", "positive", "none"))
+)
+eval_lstm
+```
+
+## Model Naive Bayes {.tabset}
+
+```{r}
+testpred <- stats::predict(nbclassifier, testbn)
+```
+
+```{r}
+eval_nb <- confusionMatrix(data = as.factor(testpred), reference = as.factor(testy))
+eval_nb
+```
+
+## Model LSTM vs Model NB {.tabset}
+
+Untuk mengetahui bagaimana performa model, kita tidak hanya akan melihat dari nilai akurasinya saja karena jumlah observasi dari target kita tidak memiliki proporsi yang seimbang. Akan tetapi kita tidak usah khawatir, kita dapat memanfaatkan nilai presisi dan sensitifitas (recall), untuk mengetahui bagaimana performa model kita. Kedua nilai tersebut akan dikalkulasi secara bersamaan menjadi satu nilai evaluasi yang bernama <i>F1 Score</i>. 
+
+```{r, message=FALSE, warning=FALSE}
+compare_lstm_acc <- data_frame(Model = "LSTM",
+                               Accuracy = round((eval_lstm$overall[1] * 100), 2),
+                               `F1 Score Neg` = 2 * (round((eval_lstm$byClass[9] * 100), 2) * round((eval_lstm$byClass[1] * 100), 2)) / (round((eval_lstm$byClass[9] * 100), 2) + round((eval_lstm$byClass[1] * 100), 2)),
+                               `F1 Score Net` = 2 * ( round((eval_lstm$byClass[10] * 100), 2) * round((eval_lstm$byClass[2] * 100), 2)) / (round((eval_lstm$byClass[10] * 100), 2) + round((eval_lstm$byClass[2] * 100), 2)),
+                               `F1 Score Pos` = 2 * (round((eval_lstm$byClass[11] * 100), 2) * round((eval_lstm$byClass[3] * 100), 2)) / (round((eval_lstm$byClass[11] * 100), 2) + round((eval_lstm$byClass[3] * 100), 2)),
+                               `F1 Score Non` = 2 * (round((eval_lstm$byClass[4] * 100), 2) * round((eval_lstm$byClass[12] * 100), 2)) / (round((eval_lstm$byClass[4] * 100), 2) + round((eval_lstm$byClass[12] * 100), 2))
+                               )
+
+compare_nb_acc <- data_frame(Model = "Naive Bayes",
+                               Accuracy = round((eval_nb$overall[1] * 100), 2),
+                               `F1 Score Neg` = 2 * (round((eval_nb$byClass[9] * 100), 2) * round((eval_nb$byClass[1] * 100), 2)) / (round((eval_nb$byClass[9] * 100), 2) + round((eval_nb$byClass[1] * 100), 2)),
+                               `F1 Score Net` = 2 * ( round((eval_nb$byClass[10] * 100), 2) * round((eval_nb$byClass[2] * 100), 2)) / (round((eval_nb$byClass[10] * 100), 2) + round((eval_nb$byClass[2] * 100), 2)),
+                               `F1 Score Pos` = 2 * (round((eval_nb$byClass[11] * 100), 2) * round((eval_nb$byClass[3] * 100), 2)) / (round((eval_nb$byClass[11] * 100), 2) + round((eval_nb$byClass[3] * 100), 2)),
+                               `F1 Score Non` = 2 * (round((eval_nb$byClass[4] * 100), 2) * round((eval_nb$byClass[12] * 100), 2)) / (round((eval_nb$byClass[4] * 100), 2) + round((eval_nb$byClass[12] * 100), 2))
+                               )
+
+rbind(compare_lstm_acc, compare_nb_acc)
+```
+
+Jika dilihat dari hasil komparasi di atas, kita mengetahui bahwa model LSTM lebih unggul hampir disetiap peforma, untuk setiap target variabelnya. Pada kasus ini, semua target variabel dianggap penting, karena setiap sentimen untuk berita emas akan mempengaruhi keputusan seseorang dalam berinvestasi emas.
+
+Sedikit catatan di sini, walaupun model LSTM lebih unggul pada kasus ini, bukan berarti model Naive Bayes itu jelek atau tidak bisa digunakan dalam kebutuhan kita nantinya. Selain dilihat dari metrik evaluasi, kita juga bisa menentukan model yang akan kita gunakan bedasarkan kebutuhan. 
+
+Salah contoh kapan kita memerlukan model LSTM dalam melakukan analisis sentimen adalah ketika kita perlu memperhatikan letak atau posisi kata dalam sebuah kalimat.
+
+> Kalimat 1 (Sentimen Positif): Pelayanan di restoran ini sangat baik dan tidak mengecewakan
+
+> Kalimat 2 (Sentimen Negatif): Pelayanan di restoran ini tidak baik dan mengecewakan 
+
+Dari dua kalimat diatas, penempatakan posisi kata <i>tidak</i> sangat menentukan apakah kalimat tersebut memiliki aspek sentimen positif atau negatif. Proses pembelajaran posisi sebuah kata dalam kalimat bisa dilakukan dengan memanfaatkan <i>embedding layer</i> dari model LSTM.
+
+Salah satu contoh kapan kita menggunakan model Naive Bayes adalah ketika kita sudah mengetahui beberapa kata yang sangat dominan dalam sebuah kelas target yang ingin kita prediksi, sehingga kita bisa menggunakan kata tersebut sebagai sebuah kata kunci utama untuk memprediksi. Dari hasil explorasi karakteristik untuk masing-masing aspek sentimen, kita mengetahui bahwa disetiap berita yang mengandung unsur kata <i>fall</i> pasti berita tersebut mengandung aspek negatif dan untuk setiap berita yang mengandung unsur kata <i>gains</i> pasti berita tersebut mengandung aspek positif. 
+
+Selain itu juga proses komputasi dengan model Naive Bayes tidak terlalu memakan banyak tenaga komputasi, sehingga ketika kita menghadapi data yang cukup banyak mungkin kita bisa menggunakan model Naive Bayes terlebih dahulu, dan jika memang hasilnya sudah memenuhi ekspektasi yang kita inginkan, kita tidak perlu membuat model yang jauh lebih kompleks yang memerlukan banyak tenaga komputasi.
+
+# Kesimpulan
+
+Di sini kita dapat menarik sebuah kesimpulan bahwa model yang paling baik dalam mengklasifikasikan sentiment dari sebuah berita yang membahas harga emas adalah model LSTM. Walaupun memang memerlukan proses yang lebih rumit dan memakan waktu yang lebih lama tapi jika dilihat dari peforma yang dihasilkan memang memiliki perbedaan yang cukup signifikan dengan model pembandingnya model Naive Bayes.
+
+Dalam kasus ini, implementasi dari model LSTM untuk melakukan <i>Aspect Based Sentiment Analysis</i> akan sangat berguna untuk investor emas dan media. Dari sudut pandang investor emas, para investor emas biasanya juga suka memanfaatkan berita untuk membantu mereka untuk menentukan apakah mereka akan menambah investasi atau menjual investasi emas mereka. Jika sebuah berita mengandung unsur negatif mengenai emas, berita tersebut akan memberikan dampak terhadap harga emas dipasaran, begitu juga sebaliknya. Maka dari itu, implementasi dari model LSTM ini dapat dimanfaatkan juga oleh media untuk lebih menekankan apakah berita yang disajikan memiliki aspek positif, negatif, netral atau tidak memiliki aspek apa-apa. Jika ada sebuah media yang dapat menekankan aspek beritanya terhadap pembaca atau penonton berita tersebut, para penyimaknya akan sangat terbantu apa lagi jika aspek yang disampaikannya cukup akurat.
+
+Model LSTM yang sudah kita buat sebenarnya masih bisa dikembangkan lebih lanjut lagi dengan melakukan beberapa cara berikut ini,
+
+*  Pada tahap data teks pre-processing kita bisa menambahkan tahapan <i>stemming</i>, tahapan ini adalah tahapan kita memotong kata menjadi kata intinya saja. Berikut contohnya: kata <i>bekerja</i> jika distemming akan menjadi <i>kerja</i>.
+* Menambahkan layer-layer dibagian arsitektur model, salah satu layer yang bisa ditambahkan adalah layer dropout.
+* Melakukan pengaturan pada parameter seperti, learning rate, epoch dan batch size. Tidak ada aturan khusus dalam melakukan pengaturan beberapa parameter tersebut, pengaturannya bisa dilakukan dengan coba-coba.
+
+<b> Referensi </b>
+<br>1. [LSTM for Text Classification](https://www.analyticsvidhya.com/blog/2021/06/lstm-for-text-classification/)
+<br>2. [Sentiment Analysis: A Definitive Guid](https://monkeylearn.com/sentiment-analysis/)
+<br>3. [Pengenalan Long Short Term Memory (LSTM) dan Gated Recurrent Unit (GRU) – RNN Bagian 2](https://indoml.com/2018/04/13/pengenalan-long-short-term-memory-lstm-dan-gated-recurrent-unit-gru-rnn-bagian-2/)
+<br>4.[Text Classification With LSTM](https://algotech.netlify.app/blog/text-lstm/)
+<br>5. [The 5 Step Life-Cycle for Long Short-Term Memory Models in Keras](https://machinelearningmastery.com/5-step-life-cycle-long-short-term-memory-models-keras/)
+<br>6. [Overview of various Optimizers in Neural Networks](https://towardsdatascience.com/overview-of-various-optimizers-in-neural-networks-17c1be2df6d5)
+<br>7. [Illustrated Guide to LSTM’s and GRU’s: A step by step explanation](https://towardsdatascience.com/illustrated-guide-to-lstms-and-gru-s-a-step-by-step-explanation-44e9eb85bf21)
+
+
+
+
+
