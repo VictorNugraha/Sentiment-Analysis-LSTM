@@ -18,7 +18,8 @@ text-align: justify}
 </style>
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.align = "center")
 ```
 
 # Pendahuluan
@@ -33,7 +34,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * <i>Aspect-based sentiment analysis</i>: Teknik analis ini dapat digunakan untuk mengetahui apakah sebuah komentar atau kalimat mengandung aspek positif, negatif dan netral. Tipe analisis ini banyak digunakan untuk mengetahui apakah sebuah berita mengenai saham tertentu mengandung unsur negatif atau positif, karena sebuah berita yang mengandung unsur positif dapat mempengaruhi sebuah harga saham menjadi lebih tinggi begitu juga sebaliknya.
 
-![\*Sentiment Analysis](sentiment_analysis.png)
+```{r, echo = FALSE, fig.cap="Sentiment Analysis"}
+knitr::include_graphics("foto/sentiment_analysis.png")
+```
 
 Dari ketiga pemanfaatan yang sudah dijelaskan di atas, fokus pemanfaatan dari analsia sentimen yang akan dibedah lebih mendalam pada Rpubs ini adalah <i>aspect-based sentiment analysis</i>. Tipe analisis ini akan kita coba gunakan untuk mengetahui apakah berita-berita yang berhubungan dengan emas memiliki aspek positif atau negatif yang akan memberikan dampak kepada pergerakan harga emas tersebut.
 
@@ -102,7 +105,7 @@ Supaya kita bisa lebih memahami setiap pengaruh sentiment yang ada terhadap harg
  
 * `Positive Sentiment`: Aspek positif pada berita mengenai harga emas akan cenderung meningkatkan harga emas tersebut.
 * `Negative Sentiment`: Aspek negatif pada berita mengenai harga emas akan cenderung menurunkan harga emas tersebut.
-* `Neutral Sentiment`: Aspek netral pada berita mengenai harga emas tidak akan memberika efek apapun terhadap emas tersebut.
+* `Neutral Sentiment`: Aspek netral pada berita mengenai harga emas tidak akan memberikan efek apapun terhadap emas tersebut.
 * `None Sentiment`: Aspek none pada berita mengenai harga emas sama seperti dengan aspek netral, akan tetapi aspek none itu hanya muncul pada kalimat yang mengandung unsur pertanyaan.
 
 ## Proporsi Target Variabel {.tabset}
@@ -113,13 +116,13 @@ gold$Price.Sentiment %>%
   prop.table()
 ```
 
-Dari hasil observasi, kita mengetahui bahwa total observasi untuk setiap sentiment berbeda-beda. Sentiment yang paling banyak pada data kita adalah sentiment yang memiliki aspek negatif, lalu diikuti dengan aspek postif, aspek none dan aspek netral. Idealnya memang ketika kita menghadapi data yang tidak seimbang, kita akan melakuakn penyeimbangan data dengan metode <i>upsample</i> ataupun <i>downsample</i>, akan tetapi kita akan membiarkan data yang kita tidak seimbang untuk mencari tahu apakah model yang kita gunakan dapat memprediksi dengan baik atau tidak terhadap data yang tidak seimbang proporsinya.
+Dari hasil observasi, kita mengetahui bahwa total observasi untuk setiap sentiment berbeda-beda. Sentiment yang paling banyak pada data kita adalah sentiment yang memiliki aspek positif, lalu diikuti dengan aspek negatif, aspek none dan aspek netral. Idealnya memang ketika kita menghadapi data yang tidak seimbang, kita akan melakukan penyeimbangan data dengan metode <i>upsample</i> ataupun <i>downsample</i>, akan tetapi kita akan membiarkan data yang kita tidak seimbang untuk mencari tahu apakah model yang kita gunakan dapat memprediksi dengan baik atau tidak terhadap data yang tidak seimbang proporsinya.
 
 ## Karakteristik Teks{.tabset}
 
-Untuk mengetahui teks atau token mana yang dapat mewakili apakah sebuah berita mengadung aspek adalah positf, negatif, netrak atau none, kita bisa  menggunakan `library(wordcloud)` karena wordcloud adalah alat visualisasi yang dapat membantu kita untuk menyajikan data teks dalam format yang sederhana dan jelas. Nantinya dalam visualiasi akan coba kita lihat 10 kata yang paling banyak muncul untuk setiap aspek sentiment yang ada pada berita kita.
+Untuk mengetahui teks atau token mana yang dapat mewakili apakah sebuah berita mengandung aspek adalah positif, negatif, netral atau none, kita bisa  menggunakan `library(wordcloud)` karena wordcloud adalah alat visualisasi yang dapat membantu kita untuk menyajikan data teks dalam format yang sederhana dan jelas. Nantinya dalam visualiasi akan coba kita lihat 10 kata yang paling banyak muncul untuk setiap aspek sentiment yang ada pada berita kita.
 
-* Karakteristik Teks Dengan Aspek Postif
+* Karakteristik Teks Dengan Aspek Positif
 
 ```{r, message=FALSE, warning=FALSE, fig.width=4, fig.height=2}
 pos <- gold %>% 
@@ -179,7 +182,7 @@ wordcloud(words = as.matrix(neg),
           colors=brewer.pal(2, "Dark2"))
 ```
 
-Dari visualisasi di atas, ada 2 warna yang digunakan untuk mewakili kata-kata mana yang paling sering digunakan yaiut warna ungu dan hijau. Kata-kata yang berwarna ungu adalah kata yang paling banyak digunakan dalam teks berita untuk setiap aspek sentimentnya karena kata-kata yang berwarna ungu memiliki ukuran paling besar dan berada di tengah. Dari keempat sentiment yang ada, hanya kata `gold` saja yang diberikan warna ungu oleh fungsi `wordcloud()`, hal tersebut bisa dibilang wajar karena data yang kita gunakan adalan data teks berita yang membahas tentang emas.
+Dari visualisasi di atas, ada 2 warna yang digunakan untuk mewakili kata-kata mana yang paling sering digunakan yaitu warna ungu dan hijau. Kata-kata yang berwarna ungu adalah kata yang paling banyak digunakan dalam teks berita untuk setiap aspek sentimentnya karena kata-kata yang berwarna ungu memiliki ukuran paling besar dan berada di tengah. Dari keempat sentiment yang ada, hanya kata `gold` saja yang diberikan warna ungu oleh fungsi `wordcloud()`, hal tersebut bisa dibilang wajar karena data yang kita gunakan adalan data teks berita yang membahas tentang emas.
 
 Untuk kata-kata yang berwarna hijau bukan berarti tidak penting karena fungsi wordcloud() hanya menampilkan karakteristik teks berdasarkan frekuensi term setiap kata pada setiap klasifikasi berita. Kata-kata yang berwana hijau ini, merupakan 9 kata lainnya yang paling sering muncul untuk pada setiap aspeknya.
 
@@ -364,7 +367,9 @@ Tahapan selanjutnya yang bisa kita lakukan ada <i>tokenizing</i>, tokenisasi pad
 
 Berikut adalah contoh ilustrasi dari hasil tahapan tokenisasi,
 
-![\*Tokenisasi](tokenisasi.png)
+```{r, echo = FALSE, fig.cap="Tokenisasi", fig.width=10}
+knitr::include_graphics("foto/tokenisasi.png")
+```
 
 Sebelum melakukan tahapan tokenisasi ini, ada 2 analisis yang bisa kita lakukan nantinya yaitu,
 
@@ -480,7 +485,7 @@ LSTM merupakan salah satu bagian dari Recurrent Neural Network (RNN). Jika LSTM 
 <b>Recurrent Neural Network (RNN)</b>
 
 ```{r, echo = FALSE}
-knitr::include_graphics("rnn.gif")
+knitr::include_graphics("foto/rnn.gif")
 ```
 
 Dari ilustrasi di atas, kita dapat melihat bahwa RNN sel hanya memiliki satu gate saja, jadinya setiap informasi informasi baru atau informasi dari RNN sel sebelumnya hanya akan diproses satu kali dengan menggunakan fungsi <i>Tanh</i>. Fungsi tanh digunakan untuk membantu mengatur nilai-nilai yang mengalir melalui jaringan. Fungsi tanh menekan nilai agar selalu antara -1 dan 1.
@@ -488,19 +493,21 @@ Dari ilustrasi di atas, kita dapat melihat bahwa RNN sel hanya memiliki satu gat
 Fungsi tanh memastikan bahwa nilai tetap antara -1 dan 1, sehingga mengatur output dari jaringan saraf. Anda dapat melihat bagaimana nilai yang sama dari atas tetap berada di antara batas yang diizinkan oleh fungsi tanh.
 
 ```{r, echo = FALSE}
-knitr::include_graphics("tanh_activation.gif")
+knitr::include_graphics("foto/tanh_activation.gif")
 ```
 
 <b>Long Short Term Memory (LSTM)</b>
 
-![\*LSTM Sel](lstm_cell.png)
+```{r, echo = FALSE, fig.cap="LSTM Sel", fig.width=10}
+knitr::include_graphics("foto/lstm_cell.png")
+```
 
 Konsep inti LSTM adalah <i>cell state</i>, dan berbagai gerbangnya. <i>Cell state</i> bertindak sebagai jalan raya transportasi yang mentransfer informasi relatif sepanjang rantai urutan. Anda dapat menganggapnya sebagai "memori" jaringan. Keadaan sel, secara teori, dapat membawa informasi yang relevan selama pemrosesan urutan. Jadi, bahkan informasi dari langkah sebelumnya dapat diteruskan ke langkah berikutnya, yang dapat membantu untuk mengurangi efek memori jangka pendek. Saat <i>cell state</i> melanjutkan perjalanannya, informasi ditambahkan atau dihapus ke <i>cell state</i> melalui gerbang. Gerbang adalah jaringan saraf berbeda yang memutuskan informasi mana yang diizinkan pada keadaan sel. Gerbang dapat mempelajari informasi apa yang relevan untuk disimpan atau dilupakan selama pelatihan. Agar lebih mudah untuk dipahami, berikut ilustrasi dari proses yang terjadi pada setiap gerbang dan <i>cell state</i>
 
 * <i>Gerbang Pertama: Forget Gate</i>
 
 ```{r, echo = FALSE}
-knitr::include_graphics("forget_gate.gif")
+knitr::include_graphics("foto/forget_gate.gif")
 ```
 
 Pertama, kita memiliki <i>forget gate</i>. Gerbang ini memutuskan informasi apa yang harus dibuang atau disimpan. Informasi dari sel LSTM sebelumnya dan informasi dari input saat ini dilewatkan melalui fungsi <i>Sigmoid</i>. 
@@ -508,7 +515,7 @@ Pertama, kita memiliki <i>forget gate</i>. Gerbang ini memutuskan informasi apa 
 Fungsi sigmoid nantinya akan menekan nilai input diantara 0 sampai 1. Itu berguna untuk memperbarui atau melupakan input data, karena angka apa pun yang dikalikan dengan 0 adalah 0, menyebabkan nilai menghilang atau "dilupakan." Setiap angka dikalikan dengan 1 adalah nilai yang sama sehingga nilainya tetap sama atau "dipertahankan". Jaringan dapat mempelajari data mana yang tidak penting sehingga dapat dilupakan atau data mana yang penting untuk disimpan. Jika nanti hasil yang dikeluarkan tidak bulat 0 atau 1, nilainya akan diperlakukan seperti ini, semakin mendekati 0 berarti akan dilupakan dan semakin mendekati 1 akan disimpan.
 
 ```{r, echo = FALSE}
-knitr::include_graphics("sigmoid.gif")
+knitr::include_graphics("foto/sigmoid.gif")
 ```
 
 * <i>Gerbang Kedua: Input Gate</i>
@@ -516,7 +523,7 @@ knitr::include_graphics("sigmoid.gif")
 Pada bagian ini akan menentukan informasi apa yang dirasa relevan untuk dilanjutkan atau tidak, penentuannya dilakukan dengan melakukan perkalian antara hasil output tanh dengan output sigmoid. Hasil dari output sigmoid akan menentukan informasi mana yang penting untuk disimpan dari output tanh.
 
 ```{r, echo = FALSE}
-knitr::include_graphics("input_gate.gif")
+knitr::include_graphics("foto/input_gate.gif")
 ```
 
 * <i>Cell State</i>
@@ -524,7 +531,7 @@ knitr::include_graphics("input_gate.gif")
 Seperti yang disampaikan di atas, salah satu keunggulan dari model LSTM adalah dapat memiliki tambahan sinyal baru atau <i>cell state</i>. Tambahan sinyal tersebut diperoleh dari hasil pengolahan informasi pada <i>forget gate & input gate</i>. Hasil tambahan sinyal baru ini akan diterus ke LSTM selanjutnya untuk diproses lebih lanjut lagi.
 
 ```{r, echo = FALSE}
-knitr::include_graphics("cell_state.gif")
+knitr::include_graphics("foto/cell_state.gif")
 ```
 
 * <i>Gerbang Ketiga: Output Gate</i>
@@ -534,7 +541,7 @@ Selain informasi tambahan sinyal baru yang diteruskan, akan ada satu informasi l
 Untuk mendapatkan hasil dari <i>output gate</i>, kita akan memasukan informasi dari tambahan sinyal baru kedalam fungsi tanh lalu hasilnya akan dikalikan dengan infomasi dari LSTM sel sebelumnya yang sudah dimasukan kedalam fungsi sigmoid. Hasil dari perkaliannya itu yang akan dibawa ke langkat berikutnya.
 
 ```{r, echo = FALSE}
-knitr::include_graphics("output_gate.gif")
+knitr::include_graphics("foto/output_gate.gif")
 ```
 
 Sedikit rangkuman dari penjelasan di atas, <i>forget gate</i> digunakan untuk memutuskan informasi apa yang relevan untuk disimpan dari langkah sebelumnya. <i>Input gate</i> digunakan untuk memutuskan informasi apa yang relevan untuk ditambahkan dari langkah saat ini. <i> Output gate</i> digunakan untuk menentukan informasi apa yang seharusnya diteruskan ke LSTM sel selanjutnya bedasarkan informasi <i>cell state</i>.
@@ -598,11 +605,13 @@ model <- keras_model_sequential() %>%
 
 Supaya lebih terbayang bagaimana hasil dari setiap layer yang kita buat, mari kita lihat ilustrasi di bawah ini.
 
-![\*Arsitektur](single_hidden_layer.jpg)
+```{r, echo = FALSE, fig.cap="Arsitektur"}
+knitr::include_graphics("foto/arsitek.png")
+```
 
-Setiap layer yang kita buat nantinya akan tersusun seperti ilustrasi di atas. Sedangkang untuk proses pengolahan datanya akan dimulai dari setiap unit <i>input layer</i>, lalu setiap data tersebut akan dikirim ke setiap unit LSTM yang terdapat pada bagian <i>hidden layer</i> untuk diproses lebih lanjut. Setelah itu hasilnya akan dikirimkan ke <i>output layer</i> untuk ditentukan data tersebut lebih cocok untuk masuk ke kelas yang mana. Semua proses tersebut akan terus diulang sampai semua data berhasil diproses. 
+Setiap layer yang kita buat nantinya akan tersusun seperti ilustrasi di atas. Sedangkan untuk proses pengolahan datanya akan dimulai dari setiap unit <i>embedding layer</i>, lalu setiap data tersebut akan dikirim ke setiap unit LSTM yang terdapat pada bagian <i>hidden layer</i> untuk diproses lebih lanjut. Setelah itu hasilnya akan dikirimkan ke <i>dense/output layer</i> untuk ditentukan lebih cocok untuk masuk ke kelas yang mana dimasukan melalui fungsi aktifasi <i>softmax</i>. Semua proses tersebut akan terus diulang sampai semua data berhasil diproses. 
 
-Setelah berhasil membangun arsitektur, langkah terkahir yang harus kita lakukan adalah menambahkan beberapa parameter berikut ini, <i>loss function, optimizer & metrics</i>. Penambahan ketiga parameter tersebut biasanya disebut sebagai <i>compilation/model compile</i>.
+Setelah berhasil membangun arsitektur, langkah terakhir yang harus kita lakukan adalah menambahkan beberapa parameter berikut ini, <i>loss function, optimizer & metrics</i>. Penambahan ketiga parameter tersebut biasanya disebut sebagai <i>compilation/model compile</i>.
 
 Berikut penjelasan untuk masing-masing parameter,
 
@@ -621,8 +630,8 @@ summary(model)
 
 Sekarang kita sudah bisa memasuki tahapan training model. Kita dapat menggunakan fungsi `fit()`, nantinya dalam fungsi tersebut ada dua parameter yang harus kita perhatikan, yaitu:
 
-*`epoch`: parameter ini nantinya akan mengatur banyaknya iterasi pengulangan pada saat pelatihan model. Penentuan banyaknya iterasi juga tidak memiliki aturan khusus, akan tetapi  <b>semakin banyak epoch</b> maka <b>error bisa lebih kecil</b>, namun proses <b>training semakin lama</b>  dan rentan <b>overfitting</b>.
-* `batch_size`: parameter ini nantinya akan mengatur banyak jumlah sampel yang dilatih pada tiap iterasi/epoch. Sama seperti epoch, penentuan jumlah batch size juga tidak memiliki aturan khusus, akan tetapi **semakin sedikit batch size** maka proses **training semakin lama** (karena proses optimasi model semakin banyak); namun bisa **mencegah komputasi terlalu besar** di 1 waktu sekaligus.
+* `epoch`: parameter ini nantinya akan mengatur banyaknya iterasi pengulangan pada saat pelatihan model. Penentuan banyaknya iterasi juga tidak memiliki aturan khusus, akan tetapi  <b>semakin banyak epoch</b> maka <b>error bisa lebih kecil</b>, namun proses <b>training semakin lama</b>  dan rentan <b>overfitting</b>.
+* `batch_size`: parameter ini nantinya akan mengatur banyak jumlah sampel yang dilatih pada tiap iterasi/epoch. Sama seperti epoch, penentuan jumlah batch size juga tidak memiliki aturan khusus, akan tetapi <b>semakin sedikit batch size</b> maka proses <b>training semakin lama</b> (karena proses optimasi model semakin banyak); namun bisa <b>mencegah komputasi terlalu besar</b> di 1 waktu sekaligus.
   
 ```{r}
 model_lstm <- model %>% fit(
@@ -646,7 +655,6 @@ Setelah berhasil membuat model LSTM, sekarang kita akan membuat model Naive Baye
 Jika kita menggunakan model naive bayes, kita memiliki opsi lain dalam melakukan tahapan tokenisasi. Dalam melakukan tokenisasi di sini kita bisa menggunakan fungsi dari `library(tm)` dan menggunakan fungsi yang bernama `DocumentTermMatrix()`, akan tetapi sebelum kita menggunakan fungsi tersebut kita harus mengubah format text kita menjadi corpus terlebih dahulu dengan menggunakan fungsi `VCorpus(VectorSource)`.
 
 ```{r, message=FALSE, warning=FALSE}
-teks_clean_nb <- VCorpus(VectorSource(teks_clean$News_Clean))
 trainx <- VCorpus(VectorSource(data_train$News_Clean))
 testx <- VCorpus(VectorSource(data_test$News_Clean))
 ```
@@ -654,7 +662,6 @@ testx <- VCorpus(VectorSource(data_test$News_Clean))
 Dapat dilihat di atas, kita sudah berhasil mengubah data teks kita yang sudah dibersihkan menjadi bentuk corpus, sekarang kita bisa memulai tahapan tokenisasi.
 
 ```{r}
-teks_clean_nb <- DocumentTermMatrix(teks_clean_nb)
 trainx <- DocumentTermMatrix(trainx)
 testx <- DocumentTermMatrix(testx)
 ```
@@ -662,7 +669,7 @@ testx <- DocumentTermMatrix(testx)
 Sekarang kita bisa menentukan jumlah kata yang digunakan, akan tetapi di sini penentuan jumlah kata yang akan digunakan sedikit berbeda dengan cara LSTM. di sini kita akan menentukan kata-katanya berdasarkan minimal jumlah kemunculan kata tersebut dari total keseluruhan teks kita.
 
 ```{r}
-freq_words <- findFreqTerms(teks_clean_nb, lowfreq = 100)
+freq_words <- findFreqTerms(trainx, lowfreq = 100)
 
 trainx <- trainx[ , freq_words]
 testx <- testx[ , freq_words]
