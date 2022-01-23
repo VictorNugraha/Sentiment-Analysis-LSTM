@@ -1,5 +1,5 @@
 ---
-title: "Bagaimana Melakukan analisis Sentiment Pada Berita Harga Emas Dengan Model LSTM"
+title: "Analisis Sentimen Berita Harga Emas dengan Model LSTM"
 author: "Victor Nugraha"
 date: "9/29/2021"
 output: 
@@ -407,7 +407,7 @@ maxlen
 
 Mungkin di sini masih cukup membingungkan kenapa kita memerlukan informasi panjang kata dalam sebuah teks, hal tersebut akan coba diperjelas pada saat kita masuk ke cross validasi, dikarenakan tahapan tokenisasi baru akan benar-benar kita lakukan setelah kita memisah data kita menjadi data train & data test.
 
-## Label Endocing {.tabset}
+## Label Encoding {.tabset}
 
 Sebelum kita memisahkan data kita, ada satu tahapan yang perlu kita lakukan. Tahapan ini bisa dibilang sebuah tahapan yang tidak boleh kita tinggakan ketika kita ingin menggunakan sebuah model LSTM, dikarenakan pada model tersebut tidak bisa membaca target variabel yang berbentuk string. Maka dari itu kita akan megubahnya terlebih dahulu menjadi angka dengan menggunakan fungsi di bawah ini.
 
@@ -474,7 +474,7 @@ texts_to_sequences(tokenizer, c("Excellent work!",
 
 # Machine Learning Model {.tabset}
 
-Setelah mempersiapkan data teks yang ada, sekarang kita akan masuk ke tahapan pembuatan model machine learning. Fokus model yang akan dibuat untuk melakukan analisa sentiment adalah model <i>Long Short Term Memory (LSTM)</i>. Sebagai pembanding dari model LSTM, nantinya kita akan membuat sebuah model lagi, yaitu model <i>Naive Bayes</i>.
+Setelah mempersiapkan data teks yang ada, sekarang kita akan masuk ke tahapan pembuatan model machine learning. Fokus model yang akan dibuat untuk melakukan analisis sentiment adalah model <i>Long Short Term Memory (LSTM)</i>. Sebagai pembanding dari model LSTM, nantinya kita akan membuat sebuah model lagi, yaitu model <i>Naive Bayes</i>.
 
 ## Model LSTM {.tabset}
 
